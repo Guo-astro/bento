@@ -2008,6 +2008,10 @@ jobs:
         # unknown-role copy arriving in a running editor (dropped, loadDoc) gets
         # no write actions and is locked; owner and writer copies keep theirs.
         run: node scripts/test-slides-audience-gate-browser.mjs
+      - name: Import PowerPoint link in Chromium
+        # Save as → Import PowerPoint… opens only the bento.page importer, in a
+        # new tab with no opener, and its tooltip says it needs the network.
+        run: node scripts/test-slides-import-link-browser.mjs
 
   spaces-save-browser:
     runs-on: ubuntu-latest
