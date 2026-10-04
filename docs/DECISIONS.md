@@ -7442,6 +7442,21 @@ rigs treat a drawn arrow as a deliberate difference: named in
 `test-maths-lite.ts`, counted with the identical ones in the coverage floor.
 Cost: +966 B of shell.
 
+## 2026-10-04 — dash: a restore takes content from the snapshot, identity from the live workbook
+
+Dash's recovery banner and Version history now go through
+`restoredWorkbook(json, live)` (`dash/src/recovery.ts`), the same split as
+slides' `gateRestored`. Four fields come from the LIVE workbook, never the
+snapshot: `docId`, `collab`, `readonly`, and — dash's own addition — `template`,
+because a restored template flag stops the automatic save to the file and
+re-mints the identity on the next open. A field the live workbook lacks is
+removed, so a roomless workbook cannot gain a room from a snapshot.
+
+`parseDoc` is deliberately unchanged: opening or dropping a FILE adopts that
+file's own capability, which is the design. Replace from JSON already keeps the
+live `collab` (about.ts) and still takes `docId`/`readonly` from the paste — a
+deliberate user action, left as is.
+
 ## 2026-10-04 — dash: sharing changes mark the workbook unsaved; copy roles are an allowlist
 
 Dash carries its own copy of the sharing verbs (`dash/src/sync/online.ts`), and
