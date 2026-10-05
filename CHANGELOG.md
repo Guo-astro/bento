@@ -11,6 +11,17 @@ pre-1.0.
 
 ## [Unreleased]
 
+- **Screen readers announce what each Save-as and Share command does.** The
+  menus keep one-line rows with the description on hover, and the same text
+  is now read out as the command's description; the Save-as list scrolls when
+  a short window cannot hold it. The Share menu's actions are plain rows like
+  Save as, rather than a stack of boxed buttons. Dialog
+  titles are a little smaller (17px), keyboard shortcuts in the help sheet are
+  set in the interface font and line up on the right, and keyboard focus
+  draws a clear amber ring. Also fixed: the Save caret's ▾ vanished at
+  medium window widths, rows in the phone ⋯ menu were centred, and menus in
+  the dark theme cast a navy shadow that did not show.
+
 - **Save is the top bar's primary button; the bar's other buttons line up.**
   Save and its save-as caret are now filled with the text colour, like the
   primary buttons in dialogs, in light and dark themes. The amber
