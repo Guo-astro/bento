@@ -47,6 +47,29 @@ export function readEmbeddedDoc(): string | null {
 }
 
 /**
+ * The `#bento-doc` body from an HTML string — the file as bytes, not the live
+ * DOM — so a handle's current file can be checked against the open document
+ * without a parser (it runs in the launch consumer AND in a node rig). This proves
+ * SAME DOCUMENT (an identical #bento-doc body), NOT same file: a copy re-saved with
+ * a different surrounding shell still matches, which is exactly what the launch
+ * check wants. Anchored by indexOf on the exact id attribute — double-quoted as the
+ * DOM serializes it, with a LEADING SPACE so it can never match a `data-id`
+ * lookalike — which is linear, where a regex over an unterminated `<script` is
+ * quadratic. CRLF is normalised so a file saved with CRLF line endings still
+ * compares equal. The body is <-escaped at write time so it can never itself
+ * contain the close tag. null if there is no block. */
+const DOC_BLOCK_ID_ATTR = ` id="${DATA_BLOCK_ID}"`
+export function embeddedDocBlock(html: string): string | null {
+  const at = html.indexOf(DOC_BLOCK_ID_ATTR)
+  if (at < 0) return null
+  const start = html.indexOf('>', at + DOC_BLOCK_ID_ATTR.length)
+  if (start < 0) return null
+  const end = html.indexOf(SCRIPT_CLOSE, start + 1)
+  if (end < 0) return null
+  return html.slice(start + 1, end).replace(/\r\n/g, '\n').trim() || null
+}
+
+/**
  * Extra plaintext blocks the app wants written into every saved shell —
  * language packs today (docs/i18n-packs.md), whatever else later. The kernel
  * stays ignorant of what they mean: it is told an id, a type and a JSON body,
@@ -506,6 +529,7 @@ type SaveResult = 'saved' | 'saved-as' | 'downloaded' | 'cancelled'
 
 interface FsFileHandle {
   createWritable(): Promise<{ write(data: Blob): Promise<void>; close(): Promise<void> }>
+  getFile?(): Promise<{ text(): Promise<string> }>
   name: string
 }
 
@@ -828,10 +852,25 @@ export function consumeLaunchQueue(): void {
   }
   const lq = w.launchQueue
   if (!lq || typeof lq.setConsumer !== 'function') return
+  // The open document's #bento-doc, captured now (boot, before any edit), CRLF
+  // normalised to match embeddedDocBlock. The handle we adopt must still hold THIS
+  // document: a host bug that vends the wrong file would otherwise have the first
+  // autosave silently overwrite it.
+  const booted = readEmbeddedDoc()?.replace(/\r\n/g, '\n') ?? null
   try {
-    lq.setConsumer((params) => {
+    lq.setConsumer(async (params) => {
       const handle = params?.files?.[0]
-      if (handle) adoptFileHandle(handle) // only when the host actually vended one
+      if (!handle || !booted || typeof handle.getFile !== 'function') return
+      try {
+        const text = await (await handle.getFile()).text()
+        // Adopt only if the file is still this document AND nothing claimed a handle
+        // while we awaited getFile: a Save As / "Duplicate as new deck" during that
+        // await sets its own handle, and snapping back to the launched file here
+        // would have autosave overwrite the file the user just moved to.
+        if (!hasFileHandle() && embeddedDocBlock(text) === booted) adoptFileHandle(handle)
+        // else: a different/unverifiable file, or a handle already held — leave it;
+        // ⌘S falls back to the picker.
+      } catch { /* unreadable handle → do not adopt */ }
     })
   } catch { /* setConsumer rejects a second registration — the first already won */ }
 }
