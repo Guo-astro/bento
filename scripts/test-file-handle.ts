@@ -77,7 +77,7 @@ class FakeFSHandle {
 ;(globalThis as Record<string, unknown>).self = { origin: 'https://bento.page' }
 const ON_SCREEN = 'Q3-board.bento.html'
 
-const { reconnectHandle } = await import('../kernel/src/save.ts')
+const { reconnectHandle, consumeLaunchQueue, hasFileHandle, currentFileName, writeUpdatedFile, encodeDocBody, setEncryptionPassword, parseEnvelope, decryptEnvelope } = await import('../kernel/src/save.ts')
 const DOC = { docId: 'd1', title: 'Q3' }
 const reset = () => store.clear()
 const has = () => store.has('d1')
@@ -181,6 +181,103 @@ const settle = () => new Promise((r) => setTimeout(r, 10))
   ok(/void persistHandle\(doc, handle\)/.test(body) && /void persistHandle\(doc, fileHandle\)/.test(body),
     'saveFile persists the handle on both the picked and the reconnected/adopted save')
   ok(/instanceof FileSystemFileHandle/.test(src), 'only a real FileSystemFileHandle is stored (host polyfill skipped)')
+}
+
+// --- launchQueue: a launched document holds a writable handle at boot ---------
+// A page opened in a native host or an installed PWA held NO handle until its
+// first Cmd-S, so autosave only snapshotted to IndexedDB and the file on disk
+// never changed. consumeLaunchQueue() adopts the handle the File Handling API
+// delivers, so autosave's `if (hasFileHandle())` path (editor.ts) writes the FILE
+// from the first edit. These drive the consumer against a fake launchQueue; the
+// module import itself is a no-op here (node has no window).
+console.log('\nlaunchQueue: a launched document is writable from the first edit')
+{
+  // a writable handle like the one home/bridge.js vends (makeHandle): name, kind,
+  // createWritable — records whether bytes reached it.
+  const written: string[] = []
+  const launched = {
+    kind: 'file', name: ON_SCREEN,
+    async createWritable() { return { async write(s: string) { written.push(s) }, async close() {} } },
+  }
+  // a queue the rig controls: setConsumer hands the consumer one params object
+  const setQueue = (params: { files?: unknown[] } | null) => {
+    ;(globalThis as Record<string, unknown>).launchQueue = params === null ? undefined
+      : { setConsumer(fn: (p: unknown) => void) { fn(params) } }
+  }
+
+  ok(!hasFileHandle(), 'no handle before a launch (so autosave would only snapshot — the bug)')
+
+  setQueue(null)
+  consumeLaunchQueue()
+  ok(!hasFileHandle(), 'no launchQueue (plain tab / node) → nothing adopted, no throw')
+
+  setQueue({ files: [] }) // a host that refused the launch (e.g. a read-only doc) vends nothing
+  consumeLaunchQueue()
+  ok(!hasFileHandle(), 'a refused launch (empty files) adopts nothing')
+
+  // (c) with no vended handle, the write path writes NOTHING — it throws rather
+  // than touch a file it was never given. (fileHandle is still null here.)
+  let threw = false
+  try { await writeUpdatedFile('<html>x') } catch { threw = true }
+  ok(threw && !hasFileHandle(), 'with no handle, writeUpdatedFile writes nothing (throws, no file touched)')
+
+  setQueue({ files: [launched] }) // the host handed over the open document
+  consumeLaunchQueue()
+  ok(hasFileHandle(), 'the launched file handle is adopted — hasFileHandle() is now true, so autosave writes the FILE')
+  ok(currentFileName() === ON_SCREEN, `and it is the open document (${currentFileName()})`)
+
+  // a second consume (the module init already ran one in a browser) must not throw
+  setQueue({ files: [launched] })
+  consumeLaunchQueue()
+  ok(hasFileHandle(), 'a second consume is harmless (setConsumer re-registration is caught)')
+
+}
+
+// The whole B6 claim, proven by RUNNING the REAL write path: boot with a vended
+// handle, then writeUpdatedFile → the handle's createWritable().write (what the
+// editor autosave invokes under hasFileHandle()) must put the real document bytes
+// on THAT handle. We drive it with encodeDocBody — the exact bytes a save puts in
+// #bento-doc; the HTML shell around them is DOM-only furniture (serializeBody),
+// proven by the splice/preview rigs, and carries the body verbatim.
+console.log('\nthe first write after a launch carries the real document')
+{
+  const DOC = { docId: 'launch-doc', title: 'Secret Q3 numbers', format: 'bento/slides', slides: [] }
+  const MARKER = 'Secret Q3 numbers' // document content that must never appear in an encrypted file
+  const capture = () => {
+    let got: Blob | null = null
+    return { kind: 'file', name: ON_SCREEN, text: async () => (got ? await got.text() : ''),
+      async createWritable() { return { async write(b: Blob) { got = b }, async close() {} } } }
+  }
+  const vend = (h: unknown) => { (globalThis as Record<string, unknown>).launchQueue = { setConsumer(fn: (p: unknown) => void) { fn({ files: [h] }) } }; consumeLaunchQueue() }
+
+  // (a) plaintext: the bytes written parse back to the edited document
+  setEncryptionPassword(null)
+  const plain = capture(); vend(plain)
+  await writeUpdatedFile(await encodeDocBody(DOC))
+  const back = JSON.parse(await plain.text())
+  ok(back.docId === DOC.docId && back.title === DOC.title, 'the written bytes parse back to the edited document')
+
+  // (b) with a password active: a bento/enc envelope, no plaintext, decrypts back
+  setEncryptionPassword('hunter2')
+  const sealed = capture(); vend(sealed)
+  await writeUpdatedFile(await encodeDocBody(DOC))
+  const bytes = await sealed.text()
+  const env = parseEnvelope(bytes)
+  ok(!!env, 'with a password active the written bytes are a bento/enc envelope')
+  ok(!bytes.includes(MARKER), 'and carry NO plaintext — the document title appears nowhere in the file')
+  const dec = env ? await decryptEnvelope(env, 'hunter2') : null
+  ok(!!dec && JSON.parse(dec).docId === DOC.docId, 'and decrypt back to the edited document with the password')
+  setEncryptionPassword(null) // reset module state for anything after
+}
+
+// Source pin for the trigger the behavioural row stands in for: the editor
+// autosave calls writeUpdatedFile only under hasFileHandle() — which the adopted
+// launch handle satisfies, so the first autosave takes the file path, not the
+// IndexedDB snapshot.
+{
+  const ed = readFileSync(join(root, 'slides/src/editor/editor.ts'), 'utf8')
+  ok(/if \(hasFileHandle\(\)\) \{[\s\S]{0,200}?writeUpdatedFile\(/.test(ed),
+    'editor autosave calls writeUpdatedFile under hasFileHandle() — the trigger for the write above')
 }
 
 console.log(`\n${checks - failures}/${checks} checks passed`)
