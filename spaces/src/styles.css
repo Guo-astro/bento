@@ -777,7 +777,10 @@ button.sp-callout-chip:hover { text-decoration: underline; text-underline-offset
 /* A WIDE TABLE SCROLLS. The measure belongs to the document, so a six-column
    table must not widen the prose column on a phone — it gets its own scroller
    and the paragraph above it keeps its line length. */
-.sp-tb-wrap { overflow-x: auto; position: relative; }
+/* `overscroll-behavior-x` for the reason spelled out on `.sp-board`: a
+   sideways swipe that runs out of table must stop, not become the browser's
+   back gesture. */
+.sp-tb-wrap { overflow-x: auto; overscroll-behavior-x: contain; position: relative; }
 .sp-tb {
   width: 100%; border-collapse: collapse; table-layout: fixed;
   font-size: 15px; line-height: 1.5;
@@ -1702,6 +1705,19 @@ button.sp-callout-chip:hover { text-decoration: underline; text-underline-offset
   .sp-mkbd { display: none; }
 }
 
+/* WHILE A FINGER IS DRAGGING. The press that starts a touch drag is also the
+   press that arms text selection on iOS and Android, and a card whose title is
+   being selected mid-drag paints a blue smear across the gesture. touch.ts
+   clears the selection when the hold fires; this stops a new one starting. */
+body.sp-touchdrag, body.sp-touchdrag * { -webkit-user-select: none; user-select: none; }
+/* AND SCROLL SNAPPING STANDS DOWN WHILE IT LASTS. The board's
+   `scroll-snap-type: x proximity` is right for a thumb flicking between
+   columns and wrong for the 12px-per-frame creep that carries a held card
+   towards an off-screen column: each step lands inside the proximity of the
+   snap point it just left and is pulled straight back. Measured before this
+   rule, with the finger parked at the board's right edge for 1400ms:
+   scrollLeft 0 → 0. */
+body.sp-touchdrag .sp-board { scroll-snap-type: none; }
 
 /* ————— find & replace on a small screen —————
    Measured at a 575px viewport: the bar laid out 644px wide and started at
@@ -2004,6 +2020,14 @@ button.sp-prop-val:hover { background: var(--surface); border-color: var(--edge)
 .sp-board {
   display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px;
   scroll-snap-type: x proximity;
+  /* …AND THE SWIPE STOPS AT ITS OWN EDGE. `overflow-x: auto` keeps the board's
+     columns out of the document, but by default a touch scroll that reaches
+     the end of a scroller CHAINS to its ancestors — and on a phone the
+     outermost ancestor is the browser's own back-navigation gesture. Measured
+     at 390px: the board holds 1452px of columns in a 257px box, so a reader
+     swiping through five columns hits that end on nearly every gesture.
+     Containment ends the scroll where the board does. */
+  overscroll-behavior-x: contain;
 }
 .sp-col {
   flex: 0 0 232px; min-width: 232px; scroll-snap-align: start;
@@ -2069,7 +2093,7 @@ button.sp-issue-set:hover { background: var(--chrome-2); border-color: var(--edg
    the rest as data: tabular figures, a quiet rule under the head, and no
    vertical lines — a grid of boxes is a spreadsheet, and this is a list of
    documents that happens to have columns. */
-.sp-view-tablewrap { overflow-x: auto; margin: 0 0 4px; }
+.sp-view-tablewrap { overflow-x: auto; overscroll-behavior-x: contain; margin: 0 0 4px; }
 .sp-view-table {
   border-collapse: collapse; width: 100%; font-size: 13.5px;
   font-variant-numeric: tabular-nums;
