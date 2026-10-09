@@ -187,6 +187,45 @@ the host should not launch another app on its say-so. http, https and mailto are
 what a link in a document means. A custom URL scheme is dropped rather than
 opened, the same choice Android makes.
 
+## 2026-09-09 — bento/type: comparing with another file is a VIEW, never a merge
+
+**Decision.** `type/src/compare.ts` points the existing redline engine at a
+SECOND FILE — the user picks or drops another `.bento.html` (or a bare `.json`
+document) and gets the same word-level redline the Snapshot flow gives. Two
+constraints are settled here, because both are easy to reverse by accident.
+
+**No accept/reject against a foreign base.** `redlineview.ts` gained a
+`resolvable` flag and the file comparison passes `false`. Against a SNAPSHOT,
+reject means "restore what this document said a moment ago", and the
+accept/reject arithmetic lands somewhere the author meant to be. Against
+somebody else's document it means adopting their text wholesale — that is a
+merge, and a merge is a different feature with different questions (whose ids
+win, what happens to comments and tracked changes). Comparing may not touch the
+document and may not reach the saved file, the same rule the theme and the
+locale follow. If a future session wants three-way merge, it is new work beside
+this, not a flag flipped on it.
+
+**The direction is named in the UI, every time.** `redline(before, after)` is
+not symmetric but its change COUNT is: swap the ends and you get the same number
+of cards, each saying the opposite of the truth, with nothing on screen able to
+tell you which. The other file is `before` and the live document is `after` —
+their text paints as `<del>`, yours as `<ins>` — and the panel heading names
+both ends rather than saying "7 changes".
+
+Degenerate cases are part of the feature rather than error handling around it:
+an identical file is ANSWERED and never painted as an empty redline (an empty
+list is indistinguishable from a comparison that silently failed); another Bento
+app's file names the app it actually is; a differing `docId` is legitimate and
+noted, not refused; `parseDoc` repairs are surfaced, because a repaired block id
+shows up in the redline as a change nobody made.
+
+**Pointers.** `type/src/comparedoc.ts` (the reading and the direction, no DOM),
+`type/src/compare.ts` (the surface), `showComparison` in `redlineview.ts`. Rig:
+`scripts/test-type-compare.ts`, whose fixture is the BUILT
+`type/dist-single/*.bento.html` when one is on disk, and which pins the
+orientation by change CONTENT rather than count — verified by swapping the two
+arguments and watching six checks go red while the count stayed at three.
+
 ---
 
 ## 2026-08-19 — Cross-app embedding: static render + source, never a second renderer
@@ -8345,6 +8384,71 @@ sees alone (a peer's sync op, a document stored before intake was scrubbed).
 A document's OWN `collab` is untouched by any of this; that is the file's.
 `test-type-embed.ts`, `test-type-share.ts` and `test-export-secrets.ts` pin it.
 
+## 2026-09-09 — bento/type: hanging punctuation that provably cannot move a line
+
+**Optical margin alignment ships, and it hangs punctuation in RENDERING SPACE
+only.** `type/src/micro.ts` wraps the protruding character in a
+`<span class="t-hang">` that is `position: relative` with a `left` offset. CSS
+2.1 §9.4.3 says a relatively positioned box is painted moved and affects the
+layout of no other box, so the mechanism cannot reflow a paragraph by
+construction.
+
+**That constraint is not caution, it is the format's promise.** Line breaking
+is the browser's, `paginate.ts` measures the line boxes it produces, and a
+saved file's page count is a promise already made to whoever printed it. This
+is also why the TeX approach is unavailable: pdfTeX's protrusion feeds the
+overhang back into the badness computation and legitimately changes breaks,
+which is the point there and disqualifying here.
+
+**The offset is the character's side bearing and never more.** The objective is
+stated as a number — minimise the deviation of each line's INK edge from the
+margin — and once stated, ink flush is its optimum: hanging further, the classic
+"half the quote in the margin" look, makes the stated measurement worse. The
+bearings are measured from the real face at the real size through a canvas
+(`actualBoundingBoxLeft/Right`), so changing the document's typeface changes the
+answer. Anything under a third of a pixel is dropped rather than paid for with a
+wrapper.
+
+**A wrapper CAN still reflow, and it did.** Browsers break text-shaping runs at
+element boundaries, so wrapping a character can cost a kern pair. On a 14-page
+fixture, wrapping the comma of "…including time-sheets," made the word stop
+fitting and moved the break back to the hyphen in "time-". So the pass VERIFIES
+per paragraph and unwraps any paragraph whose lines moved. On that fixture the
+guard fires on 13 of 126 paragraphs — this is a routine event, not a
+theoretical one, and a version of this feature without the check would ship
+reflows.
+
+**The check must be two-sided, and the one-sided version passed a real
+reflow.** Asking only whether the character that OPENED each line is still on
+that line is not enough: in the "time-sheets" case "receipts" was still on line
+1 afterwards, because the word had moved down onto it. The line count and every
+line top were unchanged too. A break is held only when the line's FIRST and its
+LAST character are both still on it. `boundariesHeld` is that decision, and
+`scripts/test-type-micro.ts` carries the case.
+
+**`doc.optical` defaults to ON, including for files written before it existed.**
+This is a deliberate exception to "an old file renders exactly as it did", taken
+under the rule that allows one when the new output is strictly better and said
+so. What an old file promises is its PAGINATION, and that is bit-identical:
+measured over a 14-page, 162-block, 362-line mixed document (headings, justified
+prose, lists, blockquotes, a table, footnotes, display maths), every line's
+content and every page start offset is identical with the feature on and off,
+while the ink deviation's RMS over the 188 justified lines that reach the margin
+falls from 0.664px to 0.569px, and on the lines it acts on from 1.415px to
+0.010px. Only `false` is stored; an explicit `true` normalises away.
+
+**What it does not do, and these are limits of the mechanism rather than of the
+effort.** An automatic hyphen from `hyphens: auto` has no character behind it,
+so there is nothing to wrap and nothing to hang — only an explicit hyphen the
+author typed hangs. Right-to-left text, table cells and formulas are skipped.
+Letters do not hang: moving every line's last letter out by its bearing is
+margin kerning, a separate feature with a different risk profile.
+
+**Print runs the same pass, in the print document.** `buildPrintDocument` stays
+a pure string function; `printDocument` applies the pass to the first page's
+flow and clones the result into the others, which are copies of the same flow at
+the same width. `printHtml()` — the scripted surface — therefore returns
+un-hung markup, by design.
 ## 2026-09-26 — Spaces adopts the kernel dialog and panel; spaces keeps panel persistence
 
 **Every modal in bento/spaces is `createDialog`** (kernel/src/ui/dialog.ts):
