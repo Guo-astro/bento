@@ -116,6 +116,7 @@ unique ids the first time.
 | `embed` | `page`, `anchor`, `html` | a live view of another page, or one section of it — see **Embeds** |
 | `link` | `url`, `title`, `desc`, `site`, `icon`, `image`, `html` | a card linking OUT of the space — see **Link cards** |
 | `prop` | `key`, `value`, `html` | one field value — see **The issue tracker** |
+| `view` | `layout`, `span`, `groupBy`, `html` | a board, list, table, gallery or calendar of this space's pages |
 | `view` | `layout`, `groupBy`, `sort`, `source`, `filter`, `html` | a board or list of this space's issues |
 
 `type` is a **string**, not a closed set: an unknown type survives a round trip
@@ -434,6 +435,21 @@ list**: `{ "type": "view", "layout": "board", "groupBy": "status",
 "html": "Issues by status" }`. Put it on a page of its own — a page carrying a
 view is laid out wide.
 
+`layout` is one of `list`, `table`, `gallery`, `calendar` — **or absent, which
+means a board.** Never write `"layout": "board"`: absence is what every view
+written before layouts existed carries, and a stored `"board"` is a byte
+difference that says nothing.
+
+A **calendar** lays the view's pages out by date, and has two shapes: a month
+grid (`span` absent) and a chronological timeline (`span: "timeline"`, newest
+first). Which date a page sits on is a **fixed rule, not a setting** — its
+`journal` date if it has one, otherwise the first `date`-typed field in the
+schema it carries a real `YYYY-MM-DD` value for. A page the rule finds no date
+for is listed under "No date" rather than dropped, and a value that is
+digit-shaped but not a real day (`2026-13-99`) counts as no date rather than
+being rolled into some other day. Month names, weekday names and the first day
+of the week come from the reader's locale at display time; nothing formatted is
+ever stored.
 A view's `source` says which pages it holds: `{ "has": "<fieldKey>" }`,
 `{ "under": "<pageId>" }`, or `{ "tag": "<tagKey>" }`. Absent means the
 backlog. The tag key is **lower-case** and reaches nested tags, so
