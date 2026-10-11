@@ -480,6 +480,7 @@ export const ja: Catalog = {
   "Editing": "編集",
   "Undo · redo": "元に戻す・やり直し",
   "Copy · paste — elements, or the whole slide when nothing is selected": "コピー・貼り付け — 要素、または何も選択していないときはスライド全体",
+  "Ghost cut — the selection fades until you paste to move it; Esc cancels": "ゴーストカット — 貼り付けで移動するまで選択範囲を半透明に表示。Esc で取り消し",
   "Duplicate selection": "選択を複製",
   "Group · ungroup": "グループ化・解除",
   "Comment mode": "コメントモード",

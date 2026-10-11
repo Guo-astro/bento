@@ -480,6 +480,7 @@ export const zhHans: Catalog = {
   "Editing": "编辑",
   "Undo · redo": "撤销 · 重做",
   "Copy · paste — elements, or the whole slide when nothing is selected": "复制 · 粘贴 — 元素，或在未选中任何内容时复制整张幻灯片",
+  "Ghost cut — the selection fades until you paste to move it; Esc cancels": "幽灵剪切 — 选中内容变为半透明，粘贴时移动；Esc 取消",
   "Duplicate selection": "复制所选",
   "Group · ungroup": "成组 · 取消成组",
   "Comment mode": "评论模式",

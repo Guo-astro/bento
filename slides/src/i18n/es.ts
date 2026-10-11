@@ -480,6 +480,7 @@ export const es: Catalog = {
   "Editing": "Edición",
   "Undo · redo": "Deshacer · rehacer",
   "Copy · paste — elements, or the whole slide when nothing is selected": "Copiar · pegar — elementos, o toda la diapositiva cuando no hay nada seleccionado",
+  "Ghost cut — the selection fades until you paste to move it; Esc cancels": "Corte fantasma: la selección se atenúa hasta que pegas para moverla; Esc cancela",
   "Duplicate selection": "Duplicar selección",
   "Group · ungroup": "Agrupar · desagrupar",
   "Comment mode": "Modo comentario",

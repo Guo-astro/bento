@@ -53,6 +53,10 @@ export class SlideCanvas {
    *  to stand down for it, or every scroll the zoom makes is snapped back. */
   private pinching = false
   private zoomLabel: HTMLElement | null = null
+  /** Ghost Cut (⇧⌘X): elements waiting for ⌘V to move them — faded by CSS
+   *  (.bento-el-ghost-cut) and never selectable. Set through setGhost. */
+  ghost: { slideId: string; ids: string[] } | null = null
+  private lastPointer: { x: number; y: number } | null = null
   private editing: HTMLElement | null = null
   /** The listeners of the CURRENT inline edit (text box or table cell), so
    *  they die with it. Without this a node that was edited, committed with
@@ -134,6 +138,7 @@ export class SlideCanvas {
       this.wheelNavCooldown = now + 400
       this.onSlideNav(dir)
     }, { passive: false })
+    this.scroller.addEventListener('mousemove', (ev) => { this.lastPointer = { x: ev.clientX, y: ev.clientY } })
 
     // Middle-button drag pans. Until now the scrollbars were the only way to
     // move a zoomed slide, which puts the control at the edge of the screen
@@ -595,6 +600,22 @@ export class SlideCanvas {
   zoomOut() { this.setZoom(this.zoom / 1.25) }
   zoomReset() { this.setZoom(1) }
 
+  /** Where the pointer last was over the slide, or null if it is off it. */
+  pointerOnSlide(): { x: number; y: number } | null {
+    const p = this.lastPointer && this.slidePointAt(this.lastPointer.x, this.lastPointer.y)
+    const { width, height } = this.store.doc.size
+    return p && p.x >= 0 && p.y >= 0 && p.x <= width && p.y <= height ? p : null
+  }
+
+  setGhost(ghost: { slideId: string; ids: string[] } | null) {
+    this.ghost = ghost
+    this.render()
+  }
+
+  private isGhost(id: string) {
+    return this.ghost?.slideId === this.store.slide.id && this.ghost.ids.includes(id)
+  }
+
   private buildZoomBar() {
     const bar = document.createElement('div')
     bar.className = 'ed-zoombar'
@@ -869,6 +890,9 @@ export class SlideCanvas {
       for (const node of next.querySelectorAll<HTMLElement>('[data-show-on-hover]')) {
         if (node.dataset.showOnHover !== active) node.style.display = 'none'
       }
+    }
+    for (const node of next.querySelectorAll<HTMLElement>('[data-el-id]')) {
+      if (this.isGhost(node.dataset.elId!)) node.classList.add('bento-el-ghost-cut')
     }
     this.renderSetBar(sets)
     if (this.surface) this.surface.replaceWith(next)
@@ -1310,7 +1334,7 @@ export class SlideCanvas {
     this.selecto.on('selectEnd', (e) => {
       const ids = (e.selected as HTMLElement[])
         .map((n) => n.dataset.elId)
-        .filter((id): id is string => !!id)
+        .filter((id): id is string => !!id && !this.isGhost(id)) // a marquee never picks up a ghost
       this.store.select(this.expandGroups(ids))
       if (e.isDragStartEnd) {
         e.inputEvent.preventDefault()

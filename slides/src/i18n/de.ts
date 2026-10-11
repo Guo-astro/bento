@@ -480,6 +480,7 @@ export const de: Catalog = {
   "Editing": "Bearbeiten",
   "Undo · redo": "Rückgängig · Wiederholen",
   "Copy · paste — elements, or the whole slide when nothing is selected": "Kopieren · Einfügen — Elemente oder die ganze Folie, wenn nichts ausgewählt ist",
+  "Ghost cut — the selection fades until you paste to move it; Esc cancels": "Geisterschnitt – die Auswahl wird blass, bis Einfügen sie verschiebt; Esc bricht ab",
   "Duplicate selection": "Auswahl duplizieren",
   "Group · ungroup": "Gruppieren · Gruppierung aufheben",
   "Comment mode": "Kommentarmodus",

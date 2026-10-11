@@ -2427,6 +2427,29 @@ export class Editor {
 
   // --- paste: external objects + cross-deck elements/slides ---------------------
 
+  /** ⌘V after ⇧⌘X: move the ghosted elements to the pointer (or leave them
+   *  where they are), onto the current slide — one undo step, ids kept. */
+  private moveGhost() {
+    const g = this.canvas.ghost!
+    this.canvas.setGhost(null)
+    const source = this.store.doc.slides.find((s) => s.id === g.slideId)
+    const moving = source?.elements.filter((e) => g.ids.includes(e.id)) ?? [] // only what still exists
+    if (!source || !moving.length) return
+    const target = this.store.slide
+    const at = this.canvas.pointerOnSlide()
+    const dx = at ? at.x - Math.min(...moving.map((e) => e.x)) : 0
+    const dy = at ? at.y - Math.min(...moving.map((e) => e.y)) : 0
+    this.store.commit(() => {
+      for (const el of moving) { el.x = Math.round(el.x + dx); el.y = Math.round(el.y + dy) }
+      if (source === target) return
+      source.elements = source.elements.filter((e) => !moving.includes(e))
+      // slides share ids on purpose (morph); two on ONE slide would collide
+      for (const el of moving) if (target.elements.some((e) => e.id === el.id)) el.id = uid(el.type[0])
+      target.elements.push(...moving)
+    })
+    this.store.select(moving.map((e) => e.id))
+  }
+
   private wirePaste() {
     // A dropped .bento.html OPENS as a deck (and adopts a writable handle);
     // anything else falls through to the existing image/media drop behaviour.
@@ -2439,6 +2462,7 @@ export class Editor {
       if (this.presenting) return
       const a = document.activeElement as HTMLElement | null
       if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return // text edit owns it
+      if (this.canvas.ghost) { ev.preventDefault(); this.moveGhost(); return }
       const dt = ev.clipboardData
       if (!dt) return
       // 1) an image from the OS clipboard (screenshot, copied picture…)
@@ -3002,6 +3026,7 @@ export class Editor {
       [`${mod}S`, t('Save')],
       [`${mod}Z · ${mod}⇧Z`, t('Undo · redo')],
       [`${mod}C · ${mod}V`, t('Copy · paste — elements, or the whole slide when nothing is selected')],
+      [`${mod}⇧X`, t('Ghost cut — the selection fades until you paste to move it; Esc cancels')],
       [`${mod}D`, t('Duplicate selection')],
       [`${mod}G · ${mod}⇧G`, t('Group · ungroup')],
       [`${mod}B · ${mod}I · ${mod}U`, t('Bold · italic · underline while editing text')],
@@ -3206,7 +3231,20 @@ export class Editor {
         this.duplicateSelection()
         return
       }
+      // Ghost Cut: the selection fades where it stands and ⌘V MOVES it (same
+      // ids, one undo step); Esc cancels. Also copied, so pasting elsewhere
+      // works as after ⌘C. Plain ⌘X is unchanged.
+      if (mod && ev.shiftKey && ev.key.toLowerCase() === 'x') {
+        ev.preventDefault()
+        if (!this.store.selection.length || this.store.readOnly) return
+        this.copySelection()
+        const ids = [...this.store.selection]
+        this.store.select([])
+        this.canvas.setGhost({ slideId: this.store.slide.id, ids })
+        return
+      }
       if (mod && ev.key.toLowerCase() === 'c') {
+        this.canvas.ghost = null // a fresh copy is what ⌘V should paste now
         // Copy to BOTH the in-app clipboard (fast, same session) and the system
         // clipboard as a Bento payload (works across decks/tabs). Elements when
         // any are selected; otherwise the current slide.
@@ -3266,6 +3304,7 @@ export class Editor {
         return
       }
       if (ev.key === 'Escape') {
+        if (this.canvas.ghost) { this.canvas.setGhost(null); return }
         if (this.thumbSel.length) this.setThumbSel([])
         if (this.canvas.isDrawing) this.canvas.cancelDraw()
         else if (this.canvas.isPathEditing) this.canvas.stopPathEdit(true)

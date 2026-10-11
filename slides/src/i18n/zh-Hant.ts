@@ -480,6 +480,7 @@ export const zhHant: Catalog = {
   "Editing": "編輯",
   "Undo · redo": "復原 · 重做",
   "Copy · paste — elements, or the whole slide when nothing is selected": "複製 · 貼上 — 元素，或在未選取任何內容時複製整張投影片",
+  "Ghost cut — the selection fades until you paste to move it; Esc cancels": "幽靈剪下 — 選取內容變為半透明，貼上時移動；Esc 取消",
   "Duplicate selection": "複製所選",
   "Group · ungroup": "群組 · 取消群組",
   "Comment mode": "評論模式",

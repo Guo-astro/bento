@@ -472,6 +472,7 @@ export const pt: Catalog = {
   "Editing": "Edição",
   "Undo · redo": "Desfazer · refazer",
   "Copy · paste — elements, or the whole slide when nothing is selected": "Copiar · colar — elementos, ou o slide inteiro quando nada estiver selecionado",
+  "Ghost cut — the selection fades until you paste to move it; Esc cancels": "Recorte fantasma: a seleção fica esmaecida até você colar para movê-la; Esc cancela",
   "Duplicate selection": "Duplicar seleção",
   "Group · ungroup": "Agrupar · desagrupar",
   "Comment mode": "Modo de comentário",
