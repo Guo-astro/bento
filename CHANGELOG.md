@@ -11,6 +11,12 @@ pre-1.0.
 
 ## [Unreleased]
 
+- **The text cursor shows at the start of a line.** While editing a text
+  box, the cursor at the very beginning of a line was hidden under the blue
+  editing frame and the selection box's edge. The frame now sits a few pixels
+  outside the text, and the selection box steps aside while you type, so the
+  cursor is visible wherever it is. The text itself does not move. Reported
+  in #547.
 - **The top bar no longer shifts under your pointer.** Each auto-save's
   "Saved" note, and the file name beside the deck title appearing or
   disappearing, used to push the buttons after them sideways — so when you
