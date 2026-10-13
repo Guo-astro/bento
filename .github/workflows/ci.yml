@@ -2394,6 +2394,11 @@ jobs:
         # restores; paste moves it to the pointer in one undo step, across
         # slides, without two elements sharing an id on one slide.
         run: node scripts/test-slides-ghost-cut-browser.mjs
+      - name: Connectors route on every slide in Chromium
+        # #493: a deck saved or loaded with stale connector endpoints opens with
+        # every slide's connectors on their elements' borders (thumbnail too),
+        # without dirtying the deck or making an undo step.
+        run: node scripts/test-slides-connectors-browser.mjs
       - name: Caret at the start of a line in Chromium
         # #547: with the caret at a text box's left edge, nothing paints over
         # it — the editing ring is an outline held off the box, Moveable's
