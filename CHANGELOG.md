@@ -11,6 +11,11 @@ pre-1.0.
 
 ## [Unreleased]
 
+- **Typing after inline code at the end of a line is plain text again.** In a
+  text box that already ended a line with `code` — one you saved and reopened,
+  or pasted — the caret could only sit inside the code, so everything typed at
+  the end of that line became code too, and no key got you out. Reported in
+  discussion #626.
 - **Connectors in decks written outside the editor now attach.** A deck made
   by hand or by an AI agent can name the two elements a connector joins
   without giving it the right endpoints. Until now only the slide on screen was
