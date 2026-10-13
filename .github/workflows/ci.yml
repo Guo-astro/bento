@@ -2374,6 +2374,11 @@ jobs:
         # range across a parent copies parents only, never its states; plural
         # and singular toasts.
         run: node scripts/test-slides-copy-slides-browser.mjs
+      - name: Rounded tables in Chromium
+        # A rounded table whose rows outgrow its box shows its last row (#494),
+        # keeps rounded corners on its real bottom, and a short one still
+        # fills its box; tables without a radius are unchanged.
+        run: node scripts/test-slides-table-radius-browser.mjs
       - name: Paste position in Chromium
         # ⌘C then ⌘V onto another slide keeps the element's position; onto the
         # source slide it steps +20 and cascades (#569).
