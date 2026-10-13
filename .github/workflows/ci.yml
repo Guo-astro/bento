@@ -2394,6 +2394,12 @@ jobs:
         # restores; paste moves it to the pointer in one undo step, across
         # slides, without two elements sharing an id on one slide.
         run: node scripts/test-slides-ghost-cut-browser.mjs
+      - name: Bullet indent in Chromium
+        # Tab / Shift+Tab nest and un-nest list items (and typed bullets) while
+        # editing, with the caret kept and ⌘Z right after; the panel's Indent /
+        # Outdent do the same; committed, one undo step; Tab outside a list —
+        # a plain box, a table cell — is unchanged.
+        run: node scripts/test-slides-bullet-indent-browser.mjs
       - name: Leaving an inline code run in Chromium
         # A text box that already ends a line in `code` (reopened, pasted):
         # typing at the end of that line is plain text, at the box's end or

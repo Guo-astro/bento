@@ -11,6 +11,13 @@ pre-1.0.
 
 ## [Unreleased]
 
+- **Indent and outdent bullets.** While editing text, Tab moves the bullet
+  under the caret one level deeper, beneath the one above it, and Shift+Tab
+  moves it back up; select several lines to move them together. This works on
+  lists and on bullets you type with "- ". The Typography panel has matching
+  Outdent and Indent buttons; with nothing open for editing they apply to the
+  whole text box. Tab anywhere else does what it did before. Asked for in
+  discussion #368.
 - **Typing after inline code at the end of a line is plain text again.** In a
   text box that already ended a line with `code` — one you saved and reopened,
   or pasted — the caret could only sit inside the code, so everything typed at
