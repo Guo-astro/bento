@@ -11,6 +11,12 @@ pre-1.0.
 
 ## [Unreleased]
 
+- **The top bar no longer shifts under your pointer.** Each auto-save's
+  "Saved" note, and the file name beside the deck title appearing or
+  disappearing, used to push the buttons after them sideways — so when you
+  pressed Undo a few times in a row, a click could land on Redo instead. The
+  note now shows over the end of the title, and the file name keeps its place.
+  Reported in #546.
 - **Pasting onto another slide keeps the position.** Copy a logo, a header or
   any element and paste it onto a different slide, and it lands exactly where
   it was. It steps down and right only when it would cover the same element
