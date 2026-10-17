@@ -2432,6 +2432,11 @@ jobs:
         # primary in both themes, and N language rebuilds leaving one set of
         # window/document listeners and bar observers.
         run: node scripts/test-slides-topbar-browser.mjs
+      - name: One field look in Chromium
+        # Every chrome text field, select and textarea (each element kind's
+        # panel, About, the save-as dialogs, Share, comments) has the shared
+        # field look and amber focus ring in both themes, never the UA's dress.
+        run: node scripts/test-slides-fields-browser.mjs
       - name: A password-protected deck opens in Chromium
         # One password gate and no loader failure card (1.2.0–1.2.8 showed
         # three gates under "every loader path was refused"); wrong then right
