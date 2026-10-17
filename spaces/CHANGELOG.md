@@ -1354,6 +1354,14 @@ Versions follow `0.MINOR.PATCH` while pre-1.0.
   square, sunken box. In dark theme, the **Replace from JSON** box was white,
   and the link card, view filter and Add property fields sat on a different
   shade from the rest.
+- **Restoring after a crash keeps the progress record from both copies.**
+  When the "Unsaved changes from a previous session" banner restores, every
+  day recorded in either the file or the recovered copy is kept. If both have
+  the same day, the newer copy's reading wins. A day is never counted twice
+  when one copy has thinned older days into weekly or monthly rows. Version
+  history comes back with the recovered copy. If you cleared the version
+  history before the crash, it stays cleared. Undo, restoring a version and
+  pasting document JSON still leave both records exactly as they are.
 
 ## [0.1.0] — 2026-08-03
 
