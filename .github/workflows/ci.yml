@@ -888,6 +888,12 @@ jobs:
         # a relay, replay, payload swap or docId swap.
         run: node scripts/test-home-id-agent.mjs
 
+      - name: home/ios bento/connect recovery rig
+        # Argon2id (ours: RFC 9106, Node's native one on random inputs) and every
+        # byte of kernel/fixtures/recovery-v1.json: the recovery code, derivations,
+        # both key blobs, and recovered scalars checked through CryptoKit. Apple only.
+        run: node scripts/test-home-id-recovery.mjs
+
       - name: WebExtension package rig
         # Validates the store package without writing it: every file the
         # manifest names exists, every icon is the size it claims, no unexpected
@@ -2750,6 +2756,7 @@ jobs:
             test-home-id-keys.mjs
             test-home-id-statements.mjs
             test-home-id-agent.mjs
+            test-home-id-recovery.mjs
           )
           for rig in "${rigs[@]}"; do
             echo "::group::$rig"
