@@ -11320,6 +11320,38 @@ shell it serves (gate 1, A2).
 Still for a real phone: TEE and StrongBox residency (the emulator reports
 software keys), and the API 26–29 consent path, which allows biometrics only.
 
+## 2026-10-18 — bento/spaces: which checks ask isBodySealed, and the tab title while sealed
+
+Every plaintext-to-disk guard in spaces asks `isBodySealed()` (a password OR the
+identity seal): the recovery snapshot and throttled version on the autosave
+debounce, the version added on save, and the recovery-off notice (main.ts). The
+two places that still ask `isEncryptionActive()` are the password UI in
+doccmds.ts: the Change/Remove password rows act on a password an
+identity-sealed space does not have, and the version-history note names the
+password. A new guard on anything written beside the file asks
+`isBodySealed()`.
+
+Neutral title while sealed, matching the saved file's title. Every write to
+`document.title` goes through `spaces/src/tabtitle.ts` (boot, the password
+gate, rename, setting or removing a password).
+
+Guarded by `scripts/test-spaces-sealed-browser.mjs` on the build:sealtest
+shell, with an unsealed control. Reverting either main.ts guard, or the title
+helper, turns it red.
+
+**Plaintext an unsealed session left behind (security ruling, option a).** A
+sealed boot (the seal is in place before boot(), so this is the proven state)
+never offers a recovery snapshot for its docId and lists no version history;
+it then DELETES that docId's recovery snapshot and versions through the
+kernel's `clearRecovery`/`clearVersions`, the calls the password flow already
+makes. Only that docId's entries; another document's are untouched; an
+unsealed boot deletes nothing. Residual the app cannot scrub: a deleted
+IndexedDB record can linger in the browser's on-disk database files until the
+browser compacts them.
+
+The recovery-off notice's own seal check is redundant with the autosave guard
+(a sealed space never asks for a recovery copy), and is kept on purpose; a
+mutation of it alone stays green for that reason.
 ## 2026-10-18 — bento/connect: the plaintext store refuses while sealed (a backstop)
 
 Each app guards its own calls to the recovery and version store, about 11
