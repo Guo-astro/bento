@@ -19,7 +19,7 @@
 // is only honest if changing the type is one click away, so the header carries
 // the type as a control, not a label.
 
-import { formatValue, alignFor, TYPE_LABEL } from './format.ts'
+import { formatValue, alignFor, TYPE_LABEL, AGG_SHORT } from './format.ts'
 import type { CanvasCell, CanvasSheet, CellOverride, Column, ColumnType, Sheet, TableSheet } from './model.ts'
 import { appearanceCss } from './cellfmt.ts'
 import { readCell, type Patch, type Store } from './store.ts'
@@ -1167,7 +1167,7 @@ export class Grid {
       // is deliberately left alone; only the label is repaired, because a
       // footer reading "[object Object] £97,050" is not a statement about
       // anything.
-      const label = typeof spec === 'string' ? spec : 'fx'
+      const label = typeof spec === 'string' ? t(AGG_SHORT[spec]) : 'fx'
       const hint = out === null
         // The dash is not an error and must not read as one. It says the
         // population is empty, which is a fact about the VIEW — so the hint
@@ -2480,6 +2480,16 @@ export class Grid {
     if (a.kind === 'paste') return false          // the document paste listener has the data
     if (a.kind === 'undo') { this.store.undo(); return true }
     if (a.kind === 'redo') { this.store.redo(); return true }
+    // TAB AT THE SHEET'S EDGE LEAVES THE GRID. Inside, Tab is the next cell —
+    // the data-entry run — but at the last column (or Shift+Tab at the first)
+    // there is no next cell, and swallowing the key there made the grid a
+    // keyboard trap: nothing after it (the panel, the sheet tabs) could be
+    // reached with Tab at all. Returning false hands the key to the browser,
+    // which moves focus on, as it would out of any other control.
+    if (a.kind === 'tab' && !this.sel.isRange()) {
+      const next = this.sel.cursor.col + (a.back ? -1 : 1)
+      if (next < 0 || next >= this.sel.cols) return false
+    }
 
     const moved = applyMotion(this.sel, a, {
       page: Math.max(1, Math.floor(this.scroller.clientHeight / ROW_H) - 1),
@@ -3079,6 +3089,7 @@ export class Grid {
       const ci = Number(el.dataset.ci)
       el.onmousedown = (e) => {
         if (e.button !== 0) return
+        e.preventDefault?.()   // keep focusGrid's focus — see the dataset cell's mousedown
         if (e.shiftKey) this.sel.extendTo(row, ci)
         else this.sel.moveTo(row, ci)
         this.paint(); this.announce(); this.focusGrid()
@@ -3543,6 +3554,7 @@ export class Grid {
       const ci = Number(el.dataset.ci)
       el.onmousedown = (e) => {
         if (e.button !== 0) return
+        e.preventDefault?.()   // keep focusGrid's focus — see the dataset cell's mousedown
         this.sel.moveTo(row, ci)
         this.paint(); this.announce(); this.focusGrid()
       }
@@ -3553,6 +3565,13 @@ export class Grid {
       const ci = Number(el.dataset.ci)
       el.onmousedown = (e) => {
         if (e.button !== 0) return
+        // OURS, NOT THE BROWSER'S: focusGrid() below puts focus on the cursor
+        // cell, and the browser's own mousedown focus step runs AFTER this
+        // handler — on a node paint() may just have replaced. On CI's Linux
+        // Chromium that left activeElement at BODY after every click, so the
+        // next Tab walked to the top bar instead of the next cell. Cancelling
+        // the default keeps the focus we set (and stops a drag selecting text).
+        e.preventDefault?.()   // (rigs drive this with a plain object)
         if (e.shiftKey) this.sel.extendTo(row, ci)
         else this.sel.moveTo(row, ci)
         this.paint(); this.announce()

@@ -719,3 +719,11 @@ runs:
       # series colours follow the column, not the position.
       shell: bento-step {0}
       run: node scripts/test-dash-chartbind.ts
+
+    - name: bento/dash formula dialog, sheet names, Intl locale
+      # The dialog refuses `Value * 2 +` and every other broken shape while
+      # accepting every formula the starter and the function pack use; every
+      # function has a signature; new sheets are "Sheet3"; a stored
+      # x-pseudo or malformed language tag never reaches Intl.
+      shell: bento-step {0}
+      run: node scripts/test-dash-formula-dialog.ts
