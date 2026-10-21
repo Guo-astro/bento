@@ -12,6 +12,26 @@ There is no server, so a break here would be permanent.
 
 The release that came out of watching somebody use 0.2.0.
 
+- **Pivot tables have a field editor, and open like any sheet.** Click a
+  pivot's tab and it shows where the grid was, with its fields in the
+  properties panel: drag a column (or pick it) into Rows, Columns, Values or
+  Filters, choose Sum, Average, Count, Min, Max, Median or Distinct for each
+  value, tick which values a filter keeps, and switch subtotals, grand totals
+  and (blank) groups. Values print in their column's format, so money stays
+  £. The pivot tab used to say "open it from ＋ Pivot" and the Grand total
+  column was cut off at the edge of a side panel.
+- **Chart charts what you selected, and has an editor.** Select the columns
+  first: the numbers become the series and the first text column the
+  categories (it used to chart the first three numeric columns whatever was
+  selected). Click the chart, or its Edit button, and the properties panel
+  edits it: type, title, categories, how rows are summed, legend, and a series
+  list with a colour each. The value axis wears the column's format (£, %).
+  A line through categories with no order (Region) is drawn as bars and says
+  why; "Draw a line anyway" draws it.
+- **3D is off the toolbar.** It is a developer tool for now; a story step that
+  already holds a 3D view still plays it.
+- **The column filter lists values the way the column shows them** — £4,300,
+  not 4300 — and a search for "4,300" finds it.
 - **Typing into a spreadsheet cell reads what you meant, and sums add up.**
   `15%` is stored as 0.15 and shown as 15%; `$5`, `£1,234` and `€3,50` are
   numbers that keep their currency symbol; `(5)` is −5; `2026-03-04` and
@@ -293,7 +313,8 @@ The release that came out of watching somebody use 0.2.0.
   a dataset's per-cell formulas, where a sorted view still refers to the right
   row.
 
-- **Escape closes the Story and Pivot panels.**
+- **Escape closes the Story panel.** A pivot is a sheet now, so Escape does
+  not leave it — its tab strip does, as in Excel.
 
 ## [0.2.0] — 2026-08-03
 
