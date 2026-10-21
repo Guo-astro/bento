@@ -121,3 +121,33 @@ jobs:
         # all ask isBodySealed(); neutral title while sealed, matching the saved
         # file's title. Each row has an unsealed control that shows the leak.
         run: node scripts/test-dash-sealed-browser.mjs
+
+  dash-chrome-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install browser test runtime
+        # Pinned outside app packages: browser automation is not shipped in documents.
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bento-browser" --no-package-lock --ignore-scripts playwright@1.61.1
+          "$RUNNER_TEMP/bento-browser/node_modules/.bin/playwright" install --with-deps chromium
+          echo "PLAYWRIGHT_MODULE=$RUNNER_TEMP/bento-browser/node_modules/playwright/index.mjs" >> "$GITHUB_ENV"
+      - name: Build the tested standalone document
+        run: |
+          npm ci --prefix dash
+          npm run build:single --prefix dash
+      - name: dash's shell matches slides' and spaces'
+        # The bar's house order (mark · title · undo/redo · tools · Comment ·
+        # Share · Save · 🌐 · ?), no version text or settings button, an
+        # ink-filled Save; one-line Save ▾ rows with Version history, the JSON
+        # round trip and Start from scratch; a Share popover that connects
+        # NOTHING until Go live (every WebSocket is recorded — none at boot or
+        # on an edit, one on Go live, one when a saved shared file reopens);
+        # 🌐 switching language without a reload; and at 320/360/390px the
+        # document never scrolls sideways while ⋯ carries About, Settings,
+        # Language, Help and Share.
+        run: node scripts/test-dash-chrome-browser.mjs

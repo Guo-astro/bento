@@ -200,7 +200,6 @@ const INDIRECT: Array<{ arg: string; file: string; name: string; pick: 'values' 
   // format, so it reads the same table again — a fourth spelling of the same
   // indirection rather than a fourth table.
   { arg: 'TYPE_LABEL[type]', file: 'format.ts', name: 'TYPE_LABEL', pick: 'values' },
-  { arg: 'role', file: 'sync/people.ts', name: 'ROLE_LABEL', pick: 'values' },
 ]
 
 /**
@@ -238,17 +237,17 @@ const KEEP_ENGLISH = new Map<string, string>([
  * countable as translated because they are.
  */
 const SAME_AS_ENGLISH: Record<string, string[]> = {
-  es: ['Total', 'editor', 'General', 'Series'],
+  es: ['Total', 'Editor', 'General', 'Series'],
   fr: ['Auto', 'Date', 'Format', 'Orientation', 'Portrait', 'Source', 'Surface', 'Total', 'Type'],
   // Japanese and Simplified-Chinese Excel name a new sheet "Sheet2" too, and a
   // name that matches the reader's own Excel is the whole point of the key.
   ja: ['OK', 'Sheet{n}'],
   'zh-Hans': ['Sheet{n}'],
-  de: ['Dashboard', 'Format', 'Name', 'OK', 'Symbol', 'Text', 'Updates'],
-  it: ['Dashboard', 'File', 'Formula', 'Max', 'Min', 'OK', 'vs', 'editor'],
-  // 'Total' and 'editor' are the same word in Portuguese; 'OK' and 'vs' are
+  de: ['Dashboard', 'Format', 'Live', 'Name', 'OK', 'Symbol', 'Text', 'Updates'],
+  it: ['Dashboard', 'Editor', 'File', 'Formula', 'Max', 'Min', 'OK', 'vs'],
+  // 'Total' and 'Editor' are the same word in Portuguese; 'OK' and 'vs' are
   // borrowed unchanged, as they are in the Italian list above.
-  pt: ['OK', 'Total', 'editor', 'vs'],
+  pt: ['Editor', 'OK', 'Total', 'vs'],
 }
 
 // --- sweeping the source -----------------------------------------------------
